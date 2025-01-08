@@ -19,6 +19,7 @@ type Msg =
     | SetInput of string
     | LoadTodos of ApiCall<unit, Todo list>
     | SaveTodo of ApiCall<string, Todo list>
+    //
     | HoverStartButton
     | NormalStartButton
     | ClickStartButton
@@ -105,6 +106,61 @@ module ViewComponents =
                 Html.div [
                 ]
                 Html.div [
+                    prop.className "flex flex:row"
+                    prop.style [
+                        style.boxShadow (1, 0, 1, "#18bbff")
+                        style.custom("box-shadow", "inset 1px 0 1px #18bbff") //TODO replace with actual methods? should be somewhere in style
+                        style.justifyContent.spaceAround //TODO inconsistent styling with flex and grids either all in class name or all in methods
+                        style.alignItems.center
+                        style.width 160 // Set button width //TODO Make it dynamic based on content inside
+                        style.height 30 // Set button height
+                        style.backgroundImage "linear-gradient(#0c59b9 1%, #139ee9 6%, #18b5f2 10%, #139beb 14%, #1290e8 19%, #0d8dea 63%, #0d9ff1 81%, #0f9eed 88%, #119be9 91%, #1392e2 94%, #137ed7 97%, #095bc9)"
+                    ]
+                    prop.children [
+                        //list of icon
+                        Html.div [
+                            prop.className "flex gap-2"
+
+                            prop.children [
+                                //Icons
+                                Html.div [
+                                    prop.style [
+                                        style.backgroundSize "contain"
+
+                                        style.width 16
+                                        style.height 16
+                                        style.backgroundImageUrl $"tray_icons/green_shield.png"
+                                    ]
+                                ]
+                                Html.div [
+                                    prop.style [
+                                        style.backgroundSize "contain"
+
+                                        style.width 16
+                                        style.height 16
+                                        style.backgroundImageUrl $"tray_icons/internet.png"
+                                    ]
+                                ]
+                                Html.div [
+                                    prop.style [
+                                        style.backgroundSize "contain"
+                                        style.width 16
+                                        style.height 16
+                                        style.backgroundImageUrl $"tray_icons/defaultprog.png"
+                                    ]
+                                ]
+                            ]
+                        ]
+                        //time
+                        Html.div [
+                            prop.text "13:35 PM"
+                            prop.style [
+                                style.color "white"
+                                //find windows font
+                            ]
+                            prop.className ""
+                        ]
+                    ]
                 ]
             ]
 
