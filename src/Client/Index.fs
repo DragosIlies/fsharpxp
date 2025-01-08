@@ -3,16 +3,25 @@ module Index
 open Elmish
 open SAFE
 open Shared
-
+open System
 type ButtonState =
     | Normal
     | Hover
     | Clicked
 
+
+
+type WindowsApp = {
+    Id: Guid
+    Name: string
+    ImageURL: string
+    Selected: bool
+}
 type Model = {
     Todos: RemoteData<Todo list>
     Input: string
     StartButtonState: ButtonState
+    Apps: WindowsApp List
 }
 
 type Msg =
@@ -23,14 +32,45 @@ type Msg =
     | HoverStartButton
     | NormalStartButton
     | ClickStartButton
+    | SelectWindowsApp of WindowsApp
+    | DeselectWindowsApps
+    | OpenWindow of WindowsApp
 
 let todosApi = Api.makeProxy<ITodosApi> ()
 
 let init () =
-    let initialModel = { Todos = NotStarted; Input = ""; StartButtonState = Normal }
+    let apps = [
+        {    
+        Id = Guid.NewGuid();
+        Name = "My Computer";
+        ImageURL = "app_icons/mycomputer.png";
+        Selected = false
+        };
+        {    
+        Id = Guid.NewGuid();
+        Name = "My Work";
+        ImageURL = "app_icons/mycomputer.png";
+        Selected = false
+        }
+    ]
+    let initialModel = { Todos = NotStarted; Input = ""; StartButtonState = Normal; Apps = apps }
     let initialCmd = LoadTodos(Start()) |> Cmd.ofMsg
 
     initialModel, initialCmd
+
+let deselectWindowsApps (windowsAppList:WindowsApp list) =
+    windowsAppList
+    |> List.map (fun app -> if app.Selected = true then { app with Selected = false} else app)
+
+let updateWindowsApp (windowsApp:WindowsApp) (windowsAppList:WindowsApp list) =
+    // windowsAppList //TODO You should prob check if it exists? And throw error if none
+    // |> List.exists (fun app -> app.Id = windowsApp.Id)
+
+    //deselect any previous app clicked
+    windowsAppList
+    |> deselectWindowsApps
+    |> List.map (fun app -> if app.Id = windowsApp.Id then { app with Selected = true} else app )
+    
 
 let update msg model =
     match msg with
@@ -59,6 +99,9 @@ let update msg model =
     | HoverStartButton -> { model with StartButtonState = Hover }, Cmd.none
     | NormalStartButton -> { model with StartButtonState = Normal }, Cmd.none
     | ClickStartButton -> { model with StartButtonState = Clicked }, Cmd.none
+    | SelectWindowsApp windowsApp -> { model with Apps = updateWindowsApp windowsApp model.Apps } , Cmd.none
+    | DeselectWindowsApps -> { model with Apps = deselectWindowsApps model.Apps } , Cmd.none
+    | OpenWindow windowsApp-> model, Cmd.none
 
 open Feliz
 
@@ -70,19 +113,27 @@ module ViewComponents =
 
 
 
-    let windowsApp = 
-        Html.div [
+    let windowsApp (windowsApp: WindowsApp) (dispatch:Msg -> Unit) = 
+        Html.button [
             //for first click icon
             //filter: drop-shadow(blue 0px 0px);
             //opacity: 0.5;
             //for text name
             //text-shadow: black 0px 1px 1px;
             //background-color: rgb(11, 97, 255);
-            prop.text "App"
             prop.className "w-fit flex flex-col"
             prop.style [
                 style.alignItems.center
+                if windowsApp.Selected then
+                    style.custom("filter", "drop-shadow(blue 0px 0px)")
             ]
+            prop.onClick (fun e -> 
+                e.stopPropagation() 
+                if windowsApp.Selected then
+                    dispatch (OpenWindow windowsApp)
+                else 
+                    dispatch (SelectWindowsApp windowsApp)
+                )
             prop.children [
                 //icon
                 Html.div [
@@ -90,17 +141,21 @@ module ViewComponents =
                         style.backgroundSize "contain"
                         style.width 32
                         style.height 32
-                        
-                        style.backgroundImageUrl "app_icons/mycomputer.png"
+                        if windowsApp.Selected then
+                            style.custom("opacity", "0.5")
+                        style.backgroundImageUrl $"{windowsApp.ImageURL}"
                     ]
                 ]
                 //text
                 Html.div [
-                    prop.text "My Computer"
+                    prop.text $"{windowsApp.Name}"
                     prop.style [
                         style.color "white";
                         style.fontSize 10
                         style.fontFamily "Tahoma, sans-serif"
+                        if windowsApp.Selected then
+                            style.custom("text-shadow", "black 0px 1px 1px")
+                            style.custom("background-color", "rgb(11, 97, 255)")
                     ]
                 ]
             ]
@@ -130,7 +185,7 @@ module ViewComponents =
                     ]
                     prop.onMouseEnter (fun _ -> dispatch HoverStartButton)
                     prop.onMouseLeave (fun _ -> dispatch NormalStartButton)
-                    prop.onMouseDown (fun _ -> dispatch ClickStartButton)
+                    prop.onClick (fun _ -> dispatch ClickStartButton)
                     prop.onMouseUp (fun _ -> dispatch HoverStartButton)
                 ]
                 Html.div [
@@ -198,18 +253,17 @@ module ViewComponents =
 
             ]
 
-    let listApps model dispatch =
+    let listApps (model:Model) (dispatch:Msg -> Unit) =
         Html.div [
             prop.id "listApps"
             prop.className "row-start-1 col-start-1 flex flex-col gap-2 m-2"
             prop.children [
-                windowsApp
-                windowsApp
-                windowsApp
+                for app in model.Apps do
+                    windowsApp app dispatch
             ]
         ]
 
-let view model dispatch =
+let view (model:Model) (dispatch:Msg -> Unit) =
     Html.section [
         prop.className "h-screen w-screen grid gap-4 grid-rows-[1fr_auto] grid_cols-[auto_1fr]"
         prop.style [
@@ -217,7 +271,7 @@ let view model dispatch =
             style.backgroundImageUrl "bg.jpg"
             //style.display.grid; //or use directly in class name
         ]
-        
+        prop.onClick(fun _ -> dispatch DeselectWindowsApps) //this overtakes the indiviual clicks on windows app
         prop.children [
             ViewComponents.listApps model dispatch
             ViewComponents.taskbar model dispatch
