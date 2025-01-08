@@ -72,8 +72,38 @@ module ViewComponents =
 
     let windowsApp = 
         Html.div [
+            //for first click icon
+            //filter: drop-shadow(blue 0px 0px);
+            //opacity: 0.5;
+            //for text name
+            //text-shadow: black 0px 1px 1px;
+            //background-color: rgb(11, 97, 255);
             prop.text "App"
-            prop.className "bg-gray-800 w-fit"
+            prop.className "w-fit flex flex-col"
+            prop.style [
+                style.alignItems.center
+            ]
+            prop.children [
+                //icon
+                Html.div [
+                    prop.style [
+                        style.backgroundSize "contain"
+                        style.width 32
+                        style.height 32
+                        
+                        style.backgroundImageUrl "app_icons/mycomputer.png"
+                    ]
+                ]
+                //text
+                Html.div [
+                    prop.text "My Computer"
+                    prop.style [
+                        style.color "white";
+                        style.fontSize 10
+                        style.fontFamily "Tahoma, sans-serif"
+                    ]
+                ]
+            ]
         ]
 
     let taskbar model dispatch = 
@@ -156,6 +186,8 @@ module ViewComponents =
                             prop.text "13:35 PM"
                             prop.style [
                                 style.color "white"
+                                style.fontSize 12;
+                                style.fontFamily "Tahoma, sans-serif"
                                 //find windows font
                             ]
                             prop.className ""
@@ -187,9 +219,7 @@ let view model dispatch =
         ]
         
         prop.children [
-            //Apps are on left in a column
             ViewComponents.listApps model dispatch
-            //Taskbar bottom taking whole width (flexbox or grids?)
             ViewComponents.taskbar model dispatch
         ]
     ]
