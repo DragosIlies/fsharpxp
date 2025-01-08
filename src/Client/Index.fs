@@ -50,73 +50,105 @@ let update msg model =
 open Feliz
 
 module ViewComponents =
-    let todoAction model dispatch =
+    let windowsApp = 
         Html.div [
-            prop.className "flex flex-col sm:flex-row mt-4 gap-4"
+            prop.text "App"
+            prop.className "bg-gray-800 w-fit"
+        ]
+
+    let taskbar = 
+        Html.footer [
+            prop.id "taskbar"
+            prop.className "row-start-2 col-span-2 flex justify-between items-center h-full px-4 bg-gray-800"
             prop.children [
-                Html.input [
-                    prop.className
-                        "shadow appearance-none border rounded w-full py-2 px-3 outline-none focus:ring-2 ring-teal-300 text-grey-darker"
-                    prop.value model.Input
-                    prop.placeholder "What needs to be done?"
-                    prop.autoFocus true
-                    prop.onChange (SetInput >> dispatch)
-                    prop.onKeyPress (fun ev ->
-                        if ev.key = "Enter" then
-                            dispatch (SaveTodo(Start model.Input)))
-                ]
                 Html.button [
-                    prop.className
-                        "flex-no-shrink p-2 px-12 rounded bg-teal-600 outline-none focus:ring-2 ring-teal-300 font-bold text-white hover:bg-teal disabled:opacity-30 disabled:cursor-not-allowed"
-                    prop.disabled (Todo.isValid model.Input |> not)
-                    prop.onClick (fun _ -> dispatch (SaveTodo(Start model.Input)))
-                    prop.text "Add"
+                    prop.className "flex"
+                    //prop.onClick( fun _-> do stuff())
+                    prop.text "Start"
+                ]
+                Html.div [
+                    prop.text "Middle taskbar"
+                ]
+                Html.div [
+                    prop.text "End taskbar"
                 ]
             ]
-        ]
 
-    let todoList model dispatch =
+            ]
+
+    let listApps =
         Html.div [
-            prop.className "bg-white/80 rounded-md shadow-md p-4 w-5/6 lg:w-3/4 lg:max-w-2xl"
+            prop.id "listApps"
+            prop.className "row-start-1 col-start-1 flex flex-col gap-2 m-2"
             prop.children [
-                Html.ol [
-                    prop.className "list-decimal ml-6"
-                    prop.children [
-                        match model.Todos with
-                        | NotStarted -> Html.text "Not Started."
-                        | Loading None -> Html.text "Loading..."
-                        | Loading (Some todos)
-                        | Loaded todos ->
-                            for todo in todos do
-                                Html.li [ prop.className "my-1"; prop.text todo.Description ]
-                    ]
-                ]
-
-                todoAction model dispatch
+                windowsApp
+                windowsApp
+                windowsApp
             ]
         ]
+    // let todoAction model dispatch =
+    //     Html.div [
+    //         prop.className "flex flex-col sm:flex-row mt-4 gap-4"
+    //         prop.children [
+    //             Html.input [
+    //                 prop.className
+    //                     "shadow appearance-none border rounded w-full py-2 px-3 outline-none focus:ring-2 ring-teal-300 text-grey-darker"
+    //                 prop.value model.Input
+    //                 prop.placeholder "What needs to be done?"
+    //                 prop.autoFocus true
+    //                 prop.onChange (SetInput >> dispatch)
+    //                 prop.onKeyPress (fun ev ->
+    //                     if ev.key = "Enter" then
+    //                         dispatch (SaveTodo(Start model.Input)))
+    //             ]
+    //             Html.button [
+    //                 prop.className
+    //                     "flex-no-shrink p-2 px-12 rounded bg-teal-600 outline-none focus:ring-2 ring-teal-300 font-bold text-white hover:bg-teal disabled:opacity-30 disabled:cursor-not-allowed"
+    //                 prop.disabled (Todo.isValid model.Input |> not)
+    //                 prop.onClick (fun _ -> dispatch (SaveTodo(Start model.Input)))
+    //                 prop.text "Add"
+    //             ]
+    //         ]
+    //     ]
+
+    // let todoList model dispatch =
+    //     Html.div [
+    //         prop.className "bg-white/80 rounded-md shadow-md p-4 w-5/6 lg:w-3/4 lg:max-w-2xl"
+    //         prop.children [
+    //             Html.ol [
+    //                 prop.className "list-decimal ml-6"
+    //                 prop.children [
+    //                     match model.Todos with
+    //                     | NotStarted -> Html.text "Not Started."
+    //                     | Loading None -> Html.text "Loading..."
+    //                     | Loading (Some todos)
+    //                     | Loaded todos ->
+    //                         for todo in todos do
+    //                             Html.li [ prop.className "my-1"; prop.text todo.Description ]
+    //                 ]
+    //             ]
+
+    //             todoAction model dispatch
+    //         ]
+    //     ]
+
+
 
 let view model dispatch =
     Html.section [
-        prop.className "h-screen w-screen"
+        prop.className "h-screen w-screen grid gap-4 grid-rows-[1fr_auto] grid_cols-[auto_1fr]"
         prop.style [
             style.backgroundSize "cover"
             style.backgroundImageUrl "bg.jpg"
+            //style.display.grid; //or use directly in class name
         ]
         
         prop.children [
-            //list of icons
-            Html.div [
-                //apps set in columns
-                //each app has double click to open (component for app?)
-            ]
-            //Taskbar
-            Html.footer [
-                //Windowx bar has three sections
-                //left start bar
-                //middle apps opened
-                //right apps opened in bck
-            ]
+            //Apps are on left in a column
+            ViewComponents.listApps
+            //Taskbar bottom taking whole width (flexbox or grids?)
+            ViewComponents.taskbar
+
         ]
 
         
