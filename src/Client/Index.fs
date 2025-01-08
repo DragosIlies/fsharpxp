@@ -4,20 +4,29 @@ open Elmish
 open SAFE
 open Shared
 
+type ButtonState =
+    | Normal
+    | Hover
+    | Clicked
+
 type Model = {
     Todos: RemoteData<Todo list>
     Input: string
+    StartButtonState: ButtonState
 }
 
 type Msg =
     | SetInput of string
     | LoadTodos of ApiCall<unit, Todo list>
     | SaveTodo of ApiCall<string, Todo list>
+    | HoverStartButton
+    | NormalStartButton
+    | ClickStartButton
 
 let todosApi = Api.makeProxy<ITodosApi> ()
 
 let init () =
-    let initialModel = { Todos = NotStarted; Input = "" }
+    let initialModel = { Todos = NotStarted; Input = ""; StartButtonState = Normal }
     let initialCmd = LoadTodos(Start()) |> Cmd.ofMsg
 
     initialModel, initialCmd
@@ -46,37 +55,62 @@ let update msg model =
                     Todos = RemoteData.Loaded todos
             },
             Cmd.none
+    | HoverStartButton -> { model with StartButtonState = Hover }, Cmd.none
+    | NormalStartButton -> { model with StartButtonState = Normal }, Cmd.none
+    | ClickStartButton -> { model with StartButtonState = Clicked }, Cmd.none
 
 open Feliz
 
 module ViewComponents =
+
+    let xpButtonNormal = "xp_btn_norm.png"
+    let xpButtonHover = "xp_btn_hover.png"
+    let xpButtonClicked = "xp_btn_clicked.png"
+
+
+
     let windowsApp = 
         Html.div [
             prop.text "App"
             prop.className "bg-gray-800 w-fit"
         ]
 
-    let taskbar = 
+    let taskbar model dispatch = 
+
+        let buttonBackground =
+            match model.StartButtonState with
+                | Normal -> xpButtonNormal
+                | Hover -> xpButtonHover
+                | Clicked -> xpButtonClicked
+
         Html.footer [
             prop.id "taskbar"
-            prop.className "row-start-2 col-span-2 flex justify-between items-center h-full px-4 bg-gray-800"
+            prop.className "row-start-2 col-span-2 flex justify-between items-center h-full"
+            prop.style [
+                style.backgroundImage "linear-gradient(#1f2f86, #3165c4 3%, #3682e5 6%, #4490e6 10%, #3883e5 12%, #2b71e0 15%, #2663da 18%, #235bd6 20%, #2258d5 23%, #2157d6 38%, #245ddb 54%, #2562df 86%, #245fdc 89%, #2158d4 92%, #1d4ec0 95%, #1941a5 98%)"
+            ]
             prop.children [
                 Html.button [
                     prop.className "flex"
-                    //prop.onClick( fun _-> do stuff())
-                    prop.text "Start"
+                    prop.style [
+                        style.backgroundImageUrl $"xp_btn/{buttonBackground}"
+                        style.width 97 // Set button width
+                        style.height 30 // Set button height
+                    ]
+                    prop.onMouseEnter (fun _ -> dispatch HoverStartButton)
+                    prop.onMouseLeave (fun _ -> dispatch NormalStartButton)
+                    prop.onMouseDown (fun _ -> dispatch ClickStartButton)
+                    prop.onMouseUp (fun _ -> dispatch HoverStartButton)
                 ]
                 Html.div [
-                    prop.text "Middle taskbar"
                 ]
                 Html.div [
-                    prop.text "End taskbar"
                 ]
             ]
 
             ]
 
-    let listApps =
+    let listApps model dispatch =
         Html.div [
             prop.id "listApps"
             prop.className "row-start-1 col-start-1 flex flex-col gap-2 m-2"
@@ -86,53 +120,6 @@ module ViewComponents =
                 windowsApp
             ]
         ]
-    // let todoAction model dispatch =
-    //     Html.div [
-    //         prop.className "flex flex-col sm:flex-row mt-4 gap-4"
-    //         prop.children [
-    //             Html.input [
-    //                 prop.className
-    //                     "shadow appearance-none border rounded w-full py-2 px-3 outline-none focus:ring-2 ring-teal-300 text-grey-darker"
-    //                 prop.value model.Input
-    //                 prop.placeholder "What needs to be done?"
-    //                 prop.autoFocus true
-    //                 prop.onChange (SetInput >> dispatch)
-    //                 prop.onKeyPress (fun ev ->
-    //                     if ev.key = "Enter" then
-    //                         dispatch (SaveTodo(Start model.Input)))
-    //             ]
-    //             Html.button [
-    //                 prop.className
-    //                     "flex-no-shrink p-2 px-12 rounded bg-teal-600 outline-none focus:ring-2 ring-teal-300 font-bold text-white hover:bg-teal disabled:opacity-30 disabled:cursor-not-allowed"
-    //                 prop.disabled (Todo.isValid model.Input |> not)
-    //                 prop.onClick (fun _ -> dispatch (SaveTodo(Start model.Input)))
-    //                 prop.text "Add"
-    //             ]
-    //         ]
-    //     ]
-
-    // let todoList model dispatch =
-    //     Html.div [
-    //         prop.className "bg-white/80 rounded-md shadow-md p-4 w-5/6 lg:w-3/4 lg:max-w-2xl"
-    //         prop.children [
-    //             Html.ol [
-    //                 prop.className "list-decimal ml-6"
-    //                 prop.children [
-    //                     match model.Todos with
-    //                     | NotStarted -> Html.text "Not Started."
-    //                     | Loading None -> Html.text "Loading..."
-    //                     | Loading (Some todos)
-    //                     | Loaded todos ->
-    //                         for todo in todos do
-    //                             Html.li [ prop.className "my-1"; prop.text todo.Description ]
-    //                 ]
-    //             ]
-
-    //             todoAction model dispatch
-    //         ]
-    //     ]
-
-
 
 let view model dispatch =
     Html.section [
@@ -145,39 +132,8 @@ let view model dispatch =
         
         prop.children [
             //Apps are on left in a column
-            ViewComponents.listApps
+            ViewComponents.listApps model dispatch
             //Taskbar bottom taking whole width (flexbox or grids?)
-            ViewComponents.taskbar
-
+            ViewComponents.taskbar model dispatch
         ]
-
-        
     ]
-
-    // Html.section [
-    //     prop.className "h-screen w-screen"
-    //     prop.style [
-    //         // style.backgroundSize "cover"
-    //         // style.backgroundImageUrl "https://unsplash.it/1200/900?random"
-    //         // style.backgroundPosition "no-repeat center center fixed"
-    //     ]
-
-    //     prop.children [
-    //         // Html.a [
-    //         //     prop.href "https://safe-stack.github.io/"
-    //         //     prop.className "absolute block ml-12 h-12 w-12 bg-teal-300 hover:cursor-pointer hover:bg-teal-400"
-    //         //     prop.children [ Html.img [ prop.src "/favicon.png"; prop.alt "Logo" ] ]
-    //         // ]
-
-    //         // Html.div [
-    //         //     prop.className "flex flex-col items-center justify-center h-full"
-    //         //     prop.children [
-    //         //         Html.h1 [
-    //         //             prop.className "text-center text-5xl font-bold text-white mb-3 rounded-md p-4"
-    //         //             prop.text "safe"
-    //         //         ]
-    //         //         ViewComponents.todoList model dispatch
-    //         //     ]
-    //         // ]
-    //     ]
-    // ]
