@@ -178,8 +178,8 @@ module ViewComponents =
                         style.fontSize 10
                         style.fontFamily "Tahoma, sans-serif"
                         if windowsShortcut.Selected then
-                            style.custom("text-shadow", "black 0px 1px 1px")
-                            style.custom("background-color", "rgb(11, 97, 255)")
+                            style.custom("textShadow", "black 0px 1px 1px")
+                            style.custom("backgroundColor", "rgb(11, 97, 255)")
                     ]
                 ]
             ]
@@ -218,7 +218,7 @@ module ViewComponents =
                     prop.className "flex flex:row"
                     prop.style [
                         style.boxShadow (1, 0, 1, "#18bbff")
-                        style.custom("box-shadow", "inset 1px 0 1px #18bbff") //TODO replace with actual methods? should be somewhere in style
+                        style.custom("boxShadow", "inset 1px 0 1px #18bbff") //TODO replace with actual methods? should be somewhere in style
                         style.justifyContent.spaceAround //TODO inconsistent styling with flex and grids either all in class name or all in methods
                         style.alignItems.center
                         style.width 160 // Set button width //TODO Make it dynamic based on content inside
