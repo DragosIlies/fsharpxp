@@ -4,24 +4,34 @@ open Elmish
 open SAFE
 open Shared
 open System
+
+
 type ButtonState =
     | Normal
     | Hover
     | Clicked
 
 
-
-type WindowsApp = {
+type WindowsShortcut = {
     Id: Guid
     Name: string
     ImageURL: string
     Selected: bool
 }
+
+type Window = {
+    Id: Guid
+    Active: bool
+    Shortcut: WindowsShortcut
+}
+
 type Model = {
     Todos: RemoteData<Todo list>
     Input: string
+    //
     StartButtonState: ButtonState
-    Apps: WindowsApp List
+    Shortcuts: WindowsShortcut List
+    Windows: Window List
 }
 
 type Msg =
@@ -32,14 +42,14 @@ type Msg =
     | HoverStartButton
     | NormalStartButton
     | ClickStartButton
-    | SelectWindowsApp of WindowsApp
-    | DeselectWindowsApps
-    | OpenWindow of WindowsApp
+    | SelectWindowsShortcut of WindowsShortcut
+    | DeselectWindowsShortcuts
+    | OpenWindow of WindowsShortcut
 
 let todosApi = Api.makeProxy<ITodosApi> ()
 
 let init () =
-    let apps = [
+    let shortcuts = [
         {    
         Id = Guid.NewGuid();
         Name = "My Computer";
@@ -53,24 +63,34 @@ let init () =
         Selected = false
         }
     ]
-    let initialModel = { Todos = NotStarted; Input = ""; StartButtonState = Normal; Apps = apps }
+
+    let windows = 
+        shortcuts
+        |> List.map (fun currentShortcut -> { Id = Guid.NewGuid(); Active = false; Shortcut = currentShortcut }) 
+
+    let initialModel = { Todos = NotStarted; Input = ""; StartButtonState = Normal; Shortcuts = shortcuts; Windows = windows }
     let initialCmd = LoadTodos(Start()) |> Cmd.ofMsg
 
     initialModel, initialCmd
 
-let deselectWindowsApps (windowsAppList:WindowsApp list) =
-    windowsAppList
+let deselectWindowsShortcuts (windowsShortcutList:WindowsShortcut list) =
+    windowsShortcutList
     |> List.map (fun app -> if app.Selected = true then { app with Selected = false} else app)
 
-let updateWindowsApp (windowsApp:WindowsApp) (windowsAppList:WindowsApp list) =
-    // windowsAppList //TODO You should prob check if it exists? And throw error if none
-    // |> List.exists (fun app -> app.Id = windowsApp.Id)
+let updateWindowsShortcut (windowsShortcut:WindowsShortcut) (windowsShortcutList:WindowsShortcut list) =
+    // WindowsShortcutList //TODO You should prob check if it exists? And throw error if none
+    // |> List.exists (fun app -> app.Id = WindowsShortcut.Id)
 
     //deselect any previous app clicked
-    windowsAppList
-    |> deselectWindowsApps
-    |> List.map (fun app -> if app.Id = windowsApp.Id then { app with Selected = true} else app )
+    windowsShortcutList
+    |> deselectWindowsShortcuts
+    |> List.map (fun app -> if app.Id = windowsShortcut.Id then { app with Selected = true} else app )
     
+let openWindow (shortcut : WindowsShortcut) (windows :Window list)= 
+    //set active the window which has same shortcut as the argument given
+    windows
+    |> List.map (fun window -> if window.Shortcut.Id = shortcut.Id then {window with Active = true} else window)
+
 
 let update msg model =
     match msg with
@@ -99,9 +119,9 @@ let update msg model =
     | HoverStartButton -> { model with StartButtonState = Hover }, Cmd.none
     | NormalStartButton -> { model with StartButtonState = Normal }, Cmd.none
     | ClickStartButton -> { model with StartButtonState = Clicked }, Cmd.none
-    | SelectWindowsApp windowsApp -> { model with Apps = updateWindowsApp windowsApp model.Apps } , Cmd.none
-    | DeselectWindowsApps -> { model with Apps = deselectWindowsApps model.Apps } , Cmd.none
-    | OpenWindow windowsApp-> model, Cmd.none
+    | SelectWindowsShortcut windowsShortcut -> { model with Shortcuts = updateWindowsShortcut windowsShortcut model.Shortcuts } , Cmd.none
+    | DeselectWindowsShortcuts -> { model with Shortcuts = deselectWindowsShortcuts model.Shortcuts } , Cmd.none
+    | OpenWindow windowsShortcut-> {model with Windows = openWindow windowsShortcut model.Windows}, Cmd.none
 
 open Feliz
 
@@ -111,28 +131,32 @@ module ViewComponents =
     let xpButtonHover = "xp_btn_hover.png"
     let xpButtonClicked = "xp_btn_clicked.png"
 
+    let windowDisplay (window:Window) = 
+        Html.div [
+            prop.text window.Shortcut.Name
+        ]
 
+    let windowsDisplayed (windows: Window list) (dispatch:Msg -> Unit) =
+        Html.div [
+            for window in windows do
+                if window.Active then
+                    windowDisplay window
+        ]
 
-    let windowsApp (windowsApp: WindowsApp) (dispatch:Msg -> Unit) = 
+    let windowsShortcut (windowsShortcut: WindowsShortcut) (dispatch:Msg -> Unit) = 
         Html.button [
-            //for first click icon
-            //filter: drop-shadow(blue 0px 0px);
-            //opacity: 0.5;
-            //for text name
-            //text-shadow: black 0px 1px 1px;
-            //background-color: rgb(11, 97, 255);
             prop.className "w-fit flex flex-col"
             prop.style [
                 style.alignItems.center
-                if windowsApp.Selected then
+                if windowsShortcut.Selected then
                     style.custom("filter", "drop-shadow(blue 0px 0px)")
             ]
             prop.onClick (fun e -> 
                 e.stopPropagation() 
-                if windowsApp.Selected then
-                    dispatch (OpenWindow windowsApp)
+                if windowsShortcut.Selected then
+                    dispatch (OpenWindow windowsShortcut)
                 else 
-                    dispatch (SelectWindowsApp windowsApp)
+                    dispatch (SelectWindowsShortcut windowsShortcut)
                 )
             prop.children [
                 //icon
@@ -141,19 +165,19 @@ module ViewComponents =
                         style.backgroundSize "contain"
                         style.width 32
                         style.height 32
-                        if windowsApp.Selected then
+                        if windowsShortcut.Selected then
                             style.custom("opacity", "0.5")
-                        style.backgroundImageUrl $"{windowsApp.ImageURL}"
+                        style.backgroundImageUrl $"{windowsShortcut.ImageURL}"
                     ]
                 ]
                 //text
                 Html.div [
-                    prop.text $"{windowsApp.Name}"
+                    prop.text $"{windowsShortcut.Name}"
                     prop.style [
                         style.color "white";
                         style.fontSize 10
                         style.fontFamily "Tahoma, sans-serif"
-                        if windowsApp.Selected then
+                        if windowsShortcut.Selected then
                             style.custom("text-shadow", "black 0px 1px 1px")
                             style.custom("background-color", "rgb(11, 97, 255)")
                     ]
@@ -258,8 +282,8 @@ module ViewComponents =
             prop.id "listApps"
             prop.className "row-start-1 col-start-1 flex flex-col gap-2 m-2"
             prop.children [
-                for app in model.Apps do
-                    windowsApp app dispatch
+                for app in model.Shortcuts do
+                    windowsShortcut app dispatch
             ]
         ]
 
@@ -271,9 +295,10 @@ let view (model:Model) (dispatch:Msg -> Unit) =
             style.backgroundImageUrl "bg.jpg"
             //style.display.grid; //or use directly in class name
         ]
-        prop.onClick(fun _ -> dispatch DeselectWindowsApps) //this overtakes the indiviual clicks on windows app
+        prop.onClick(fun _ -> dispatch DeselectWindowsShortcuts)
         prop.children [
             ViewComponents.listApps model dispatch
             ViewComponents.taskbar model dispatch
+            ViewComponents.windowsDisplayed model.Windows dispatch
         ]
     ]
