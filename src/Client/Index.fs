@@ -131,9 +131,54 @@ module ViewComponents =
     let xpButtonHover = "xp_btn_hover.png"
     let xpButtonClicked = "xp_btn_clicked.png"
 
+    let windowTopBar (window:Window) = Html.div [ 
+        prop.style [
+            style.backgroundImage "linear-gradient(#1f2f86, #3165c4 3%, #3682e5 6%, #4490e6 10%, #3883e5 12%, #2b71e0 15%, #2663da 18%, #235bd6 20%, #2258d5 23%, #2157d6 38%, #245ddb 54%, #2562df 86%, #245fdc 89%, #2158d4 92%, #1d4ec0 95%, #1941a5 98%)"
+
+        ]
+        prop.children [
+            //left
+            Html.div [
+                prop.className "flex items-center gap-1"
+                prop.children [
+                    //Icon
+                    Html.div [
+                        prop.style [
+                            style.marginLeft 5
+                            style.backgroundSize "contain"
+                            style.width 16
+                            style.height 16
+                            style.backgroundImageUrl $"app_icons/mycomputer.png"
+                        ]
+                    ]
+                    //Name
+                    Html.div [
+                        prop.style [
+                            style.fontFamily "Tahoma, sans-serif"
+                            //style.fontWeight 700
+                            style.fontSize 12
+                            style.color "white"
+                            //style.custom("textShadow", "rgb(0, 0, 0) 1px 1px")
+                        ]
+                        prop.text window.Shortcut.Name
+                    ]
+                ]
+            ]
+            //right
+        ]
+    ]
+
     let windowDisplay (window:Window) = 
         Html.div [
-            prop.text window.Shortcut.Name
+            prop.style [
+                style.backgroundColor "rgb(8, 49, 217)"
+                style.borderRadius 5
+            ]
+
+            prop.children [
+                //top bar
+                windowTopBar window
+            ]
         ]
 
     let windowsDisplayed (windows: Window list) (dispatch:Msg -> Unit) =
